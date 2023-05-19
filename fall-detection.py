@@ -51,6 +51,14 @@ acc2 = accuracy_score(labels, 1- predicted_labels)
 acc = max(acc1, acc2)
 print('The Accuracy Obtained With K-Means With 2 Groups: ' + str(acc))
 
-plot_clusters(transformed_full_data, predicted_labels, nClusters=2, title='2-Means On Transformed Data', xLabel='Projection Onto First PC', yLabel='Projection Onto Second PC', labels=['Group1', 'Group2'])
+plot_clusters(transformed_full_data, predicted_labels, nClusters=2, title='2-Means On Transformed Data', xLabel='Projection Onto First PC', yLabel='Projection Onto Second PC', labels=['Cluster1', 'Cluster2'])
 
+for k in range(3, 11):
+    kmeans = KMeans(n_clusters=k, random_state=2023)
+    kmeans.fit(transformed_full_data)
+    predicted_labels = kmeans.predict(transformed_full_data)
+
+    labels = [f'Cluster{i}' for i in range(1, k + 1)]
+
+    plot_clusters(transformed_full_data, predicted_labels, nClusters=k, title=f'{k}-Means On Transformed Data', xLabel='Projection Onto First PC', yLabel='Projection Onto Second PC', labels=labels)
 
