@@ -1,12 +1,15 @@
 import os
 import pandas as pd
 import numpy as np
+import warnings
 
 from os import path
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from sklearn.metrics import accuracy_score
 from utils import plot_2d, min_max_scale, plot_clusters
+
+warnings.filterwarnings("ignore")
 
 # get the current working directory
 ROOT_DIR = path.abspath(os.curdir)
@@ -58,7 +61,26 @@ for k in range(3, 11):
     kmeans.fit(transformed_full_data)
     predicted_labels = kmeans.predict(transformed_full_data)
 
-    labels = [f'Cluster{i}' for i in range(1, k + 1)]
+    legendLabels = [f'Cluster{i}' for i in range(1, k + 1)]
 
-    plot_clusters(transformed_full_data, predicted_labels, nClusters=k, title=f'{k}-Means On Transformed Data', xLabel='Projection Onto First PC', yLabel='Projection Onto Second PC', labels=labels)
+    plot_clusters(transformed_full_data, predicted_labels, nClusters=k, title=f'{k}-Means On Transformed Data', xLabel='Projection Onto First PC', yLabel='Projection Onto Second PC', labels=legendLabels)
 
+    print('\n-------------------------------------')
+    numCorrectPreds = 0
+    for k_ in range(k):
+        clusterLabels = labels[predicted_labels == k_]
+        
+        numFall = np.sum(clusterLabels)
+        numNonFall = len(clusterLabels) - numFall
+
+        isFallCluster = 1 if numFall >= numNonFall else 0
+        acc = (numFall / len(clusterLabels)) if isFallCluster == 1 else (numNonFall / len(clusterLabels))
+
+        numCorrectPreds += numFall if isFallCluster == 1 else numNonFall
+        
+        clusterType = 'Fall' if isFallCluster == 1 else 'Non-Fall'
+        print(f'The Cluster {k_ + 1} Consists Of Mostly {clusterType} Data')
+        print(f'Accuracy When Cluster {k_ + 1} Predicted As {clusterType}: {acc}')
+
+    print(f'Overall Accuracy When Clusters Are Predicted Based On Majority With {k}-Means: {numCorrectPreds / len(labels)}\n-------------------------------------')
+        
