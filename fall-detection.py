@@ -1,9 +1,12 @@
 import os
 import pandas as pd
 import numpy as np
+
 from os import path
 from sklearn.decomposition import PCA
-from utils import plot_2d, min_max_scale
+from sklearn.cluster import KMeans
+from sklearn.metrics import accuracy_score
+from utils import plot_2d, min_max_scale, plot_clusters
 
 # get the current working directory
 ROOT_DIR = path.abspath(os.curdir)
@@ -15,6 +18,7 @@ df = pd.read_csv(path.join(DATA_DIR, 'falldetection_dataset.csv'), header=None)
 print(df.head())
 
 # get the full data into np array
+labels = df.iloc[:, 1].apply(lambda x: 1 if x == 'F' else 0).to_numpy()
 full_data = df.iloc[:, 2 :].to_numpy()
 full_data = min_max_scale(full_data)
 
@@ -36,5 +40,17 @@ pca2 = PCA(n_components=2)
 transformed_full_data = pca2.fit_transform(full_data)
 
 plot_2d(transformed_full_data, 'Transformed Full Dataset', 'Projection Onto First PC', 'Projection Onto Second PC', labels=['Transformed Dataset'])
-print(transformed_full_data.shape)
-print(transformed_full_data)
+
+kmeans = KMeans(n_clusters=2, random_state=2023)
+kmeans.fit(transformed_full_data)
+
+predicted_labels = kmeans.predict(transformed_full_data)
+
+acc1 = accuracy_score(labels, predicted_labels)
+acc2 = accuracy_score(labels, 1- predicted_labels)
+acc = max(acc1, acc2)
+print('The Accuracy Obtained With K-Means With 2 Groups: ' + str(acc))
+
+plot_clusters(transformed_full_data, predicted_labels, nClusters=2, title='2-Means On Transformed Data', xLabel='Projection Onto First PC', yLabel='Projection Onto Second PC', labels=['Group1', 'Group2'])
+
+
