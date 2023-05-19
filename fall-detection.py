@@ -35,6 +35,6 @@ print('Proportion of variance explained by second PC: ' + str(explained_variance
 pca2 = PCA(n_components=2)
 transformed_full_data = pca2.fit_transform(full_data)
 
-plot_2d(transformed_full_data)
+plot_2d(transformed_full_data, 'Transformed Full Dataset', 'Projection Onto First PC', 'Projection Onto Second PC', labels=['Transformed Dataset'])
 print(transformed_full_data.shape)
 print(transformed_full_data)
