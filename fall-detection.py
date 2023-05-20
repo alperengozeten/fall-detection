@@ -118,13 +118,19 @@ x_valid, x_test, y_valid, y_test = train_test_split(x_test, y_test, test_size=0.
 ------------ SVM Model ------------ 
 '''
 # set of possible values to try out
-c_values        = [1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2]
-kernel_types    = ["poly", "rbf", "sigmoid"]
-gamma_values    = ["scale", "auto"]
-degrees         = [1, 2, 3, 4, 5, 6]
+c_values = [1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2]
+kernel_types = ["poly", "rbf", "sigmoid"]
+gamma_values = ["scale", "auto"]
+degrees = [1, 2, 3, 4, 5, 6]
 
+# create a list of all possible configurations
 svm_hyperparams = list(product(c_values, kernel_types, gamma_values, degrees))
 
+# create new datasets to train the best model on
+x_train_valid = np.concatenate((x_train, x_valid), axis=0)
+y_train_valid = np.concatenate((y_train, y_valid), axis=0)
+
+'''
 # try out all possible configurations and append the results
 results = []
 for c, kernel_type, gamma, degree in svm_hyperparams:
@@ -156,10 +162,6 @@ svm_best_gamma = svm_best_params[2]
 svm_best_degree = svm_best_params[3]
 svm_best_val_acc = results[svm_best_index]
 
-# create new datasets to train the best model on
-x_train_valid = np.concatenate((x_train, x_valid), axis=0)
-y_train_valid = np.concatenate((y_train, y_valid), axis=0)
-
 # if the best kernel type is not polynomial, change the degree to NULL (unimportant)
 svm_best_degree = svm_best_degree if svm_best_kernel == 'poly' else 'NULL'
 
@@ -179,36 +181,54 @@ svm_best_model.fit(x_train_valid, y_train_valid)
 # output the obtained accuries with the best model
 svm_predictions = svm_best_model.predict(x_test)
 svm_acc = 100 * accuracy_score(y_test, svm_predictions)
-print(f"Accuracy of the best SVM model trained on (train + val) and tested on test data = {svm_acc} %\n")
+print(f"Accuracy of the best SVM model trained on (train + val) and tested on test data = {svm_acc} %\n")'''
 
 '''
 ------------ MLP Model ------------ 
 '''
+# set of possible values to try out
 learning_rates = [1e-2, 5e-2, 1e-3, 5e-4, 1e-4]
-alphas = [1, 1e-1, 1e-2, 1e-3]
-hidden_layer_sizes = [(8, 8), (16, 16), (32, 32), (64, 64)]
+alphas = [1, 1e-1, 1e-2, 1e-3, 1e-4]
+hidden_layer_sizes = [(4, 4), (8, 8), (16, 16), (32, 32), (64, 64)]
 solvers = ["adam", "sgd"]
 activation_functions = ["relu"]
 
-nn_hyperparams = list(product(hidden_layer_sizes, learning_rates, alphas, solvers, activation_functions))
+# create a list of all possible configurations
+mlp_hyperparams = list(product(hidden_layer_sizes, learning_rates, alphas, solvers, activation_functions))
 
-'''
 results = []
-for size, lr, alpha, solver, activation_function in nn_hyperparams:
-    print(f"\nRunning size={size}, lr={lr}, alpha={alpha}, solver={solver}, act_func={activation_function}")
+for size, lr, alpha, solver, activation_function in mlp_hyperparams:
+    print(f"\nRunning size={size}, lr={lr}, alpha={alpha}, solver={solver}, activation_func={activation_function}")
     model = MLPClassifier(hidden_layer_sizes=size, activation=activation_function, solver=solver, alpha=alpha, learning_rate_init=lr, max_iter=100000,
                           random_state=2023)
     model.fit(x_train, y_train)
     predictions = model.predict(x_valid)
-    val_accuracy = accuracy_score(y_valid, predictions) * 100
-    row = {"Hidden Layer Size": size,
-            "Activation Function": activation_function,
-            "Solver": solver,
-            "Alpha": alpha,
-            "Learning Rate": lr,
-            "Validation Accuracy (%)": val_accuracy}
-    results.append(row)
+    val_accuracy = 100 * accuracy_score(y_valid, predictions)
+    row = {"Hidden Layer Size": size, "Activation Function": activation_function, "Solver": solver, "Alpha": alpha, "Learning Rate": lr, "Validation Accuracy (%)": val_accuracy}
     print(row)
 
-results_sorted = sorted(results, key=lambda x: x['Validation Accuracy (%)'], reverse=True)
-'''
+    results.append(val_accuracy)
+
+results = np.asarray(results)
+mlp_best_index = np.argmax(results)
+
+# get the best set of parameters obtained
+mlp_best_params = mlp_hyperparams[mlp_best_index]
+mlp_best_size = mlp_best_params[0]
+mlp_best_lr = mlp_best_params[1]
+mlp_best_alpha = mlp_best_params[2]
+mlp_best_solver = mlp_best_params[3]
+mlp_best_activation_function = mlp_best_params[4]
+mlp_best_val_acc = results[mlp_best_index]
+
+# output the best settings obtained
+print(f'\n------------------------\nThe settings of the best MLP model: size={mlp_best_size}, lr={mlp_best_lr}, l2_reg(alpha)={mlp_best_alpha}, solver={mlp_best_solver}, activation_function={mlp_best_activation_function}')
+
+# train the best model on train + validation dataset
+mlp_best_model = MLPClassifier(hidden_layer_sizes=mlp_best_size, activation=mlp_best_activation_function, solver=mlp_best_solver, alpha=mlp_best_alpha, learning_rate_init=mlp_best_lr, max_iter=100000, random_state=2023)
+mlp_best_model.fit(x_train_valid, y_train_valid)
+
+# output the obtained accuries with the best model
+mlp_predictions = mlp_best_model.predict(x_test)
+mlp_acc = 100 * accuracy_score(y_test, mlp_predictions)
+print(f"Accuracy of the best MLP model trained on (train + val) and tested on test data = {mlp_acc} %\n")
