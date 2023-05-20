@@ -104,14 +104,20 @@ for k in range(3, 11):
 
     print(f'Overall Accuracy When Clusters Are Predicted Based On Majority With {k}-Means: {numCorrectPreds / len(labels)}\n-------------------------------------')
 '''
-           
+
+# transform the data using the first 40 PCs
 pcaNew = PCA(n_components=40)
 transformed_full_data = pcaNew.fit_transform(full_data)
-print('The total explained variance when first 40 PCs used: ' + str(np.sum(pcaNew.explained_variance_ratio_)))
+print('The total explained variance when first 40 PCs used: ' + str(np.sum(pcaNew.explained_variance_ratio_))) # check the total explained variance
 
+# split the data into train, validation, and test datasets using 70-15-15 distribution
 x_train, x_test, y_train, y_test = train_test_split(transformed_full_data, labels, test_size=0.30, random_state=2023)
 x_valid, x_test, y_valid, y_test = train_test_split(x_test, y_test, test_size=0.50, random_state=2023)
 
+'''
+------------ SVM Model ------------ 
+'''
+# set of possible values to try out
 c_values        = [1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2]
 kernel_types    = ["poly", "rbf", "sigmoid"]
 gamma_values    = ["scale", "auto"]
@@ -119,47 +125,65 @@ degrees         = [1, 2, 3, 4, 5, 6]
 
 svm_hyperparams = list(product(c_values, kernel_types, gamma_values, degrees))
 
+# try out all possible configurations and append the results
 results = []
 for c, kernel_type, gamma, degree in svm_hyperparams:
     if kernel_type == "poly":
-        print(f"\n\nRunning c={c}, kernel={kernel_type}, gamma={gamma}, degree={degree}")
+        print(f"\nRunning c={c}, kernel_type={kernel_type}, gamma={gamma}, degree={degree}")
         model = SVC(C=c, kernel=kernel_type, degree=degree, gamma=gamma, max_iter=100000, random_state=2023)
     else:
         degree = 'NULL'
-        print(f"\n\nOn the setting c={c}, kernel={kernel_type}, gamma={gamma}, degree={degree}")
+        print(f"\nRunning c={c}, kernel_type={kernel_type}, gamma={gamma}, degree={degree}")
         model = SVC(C=c, kernel=kernel_type, gamma=gamma, max_iter=100000, random_state=2023)
     
     model.fit(x_train, y_train)
     predictions = model.predict(x_valid)
     val_accuracy = accuracy_score(y_valid, predictions) * 100
     result = {'Regularization Parameter': c, 'Kernel Type': kernel_type, 'Degree': degree, 'Kernel Coefficient': gamma, 'Validation Accuracy (%)': val_accuracy}
-    results.append(result)
     print(result)
 
-results_sorted = sorted(results, key=lambda x: x['Validation Accuracy (%)'], reverse=True)
+    results.append(val_accuracy)
 
-best_SVM_params = results_sorted[0]
-c_best = best_SVM_params["Regularization Parameter"]
-kernel_type_best = best_SVM_params['Kernel Type']
-degree_best = best_SVM_params['Degree']
-gamma_value_best = best_SVM_params['Kernel Coefficient']
-best_val_acc = best_SVM_params['Validation Accuracy (%)']
+# get the index with highest accuracy score
+results = np.asarray(results)
+svm_best_index = np.argmax(results)
 
+# get the best set of parameters obtained
+svm_best_params = svm_hyperparams[svm_best_index]
+svm_best_c = svm_best_params[0]
+svm_best_kernel = svm_best_params[1]
+svm_best_gamma = svm_best_params[2]
+svm_best_degree = svm_best_params[3]
+svm_best_val_acc = results[svm_best_index]
+
+# create new datasets to train the best model on
 x_train_valid = np.concatenate((x_train, x_valid), axis=0)
 y_train_valid = np.concatenate((y_train, y_valid), axis=0)
 
-if kernel_type_best == "poly":
-    print(f"Degree = {degree_best}")
-    best_SVM_model = SVC(C=c_best, kernel=kernel_type_best, degree=degree_best,
-                     gamma=gamma_value_best, max_iter=10000, random_state=42)
-else:
-    best_SVM_model = SVC(C=c_best, kernel=kernel_type_best, gamma=gamma_value_best, max_iter=10000, random_state=42)
-print(f"Gamma Value = {gamma_value_best}")
-best_SVM_model.fit(x_train_valid, y_train_valid)
-predictions_svm = best_SVM_model.predict(x_test)
-accuracy_svm = accuracy_score(y_test, predictions_svm) * 100
-print(f"Accuracy of the best SVM model on test data = {accuracy_svm} %\n")
+# if the best kernel type is not polynomial, change the degree to NULL (unimportant)
+svm_best_degree = svm_best_degree if svm_best_kernel == 'poly' else 'NULL'
 
+# output the best settings obtained
+print(f'\n------------------------\nThe settings of the best SVM model: c={svm_best_c}, kernel_type={svm_best_kernel}, gamma={svm_best_gamma}, degree={svm_best_degree}')
+
+# create instance differently depending on the kernel type
+if svm_best_kernel == "poly":
+    svm_best_model = SVC(C=svm_best_c, kernel=svm_best_kernel, degree=svm_best_degree,
+                     gamma=svm_best_gamma, max_iter=10000, random_state=2023)
+else:
+    svm_best_model = SVC(C=svm_best_c, kernel=svm_best_kernel, gamma=svm_best_gamma, max_iter=10000, random_state=2023)
+
+# train the best model on train + validation dataset
+svm_best_model.fit(x_train_valid, y_train_valid)
+
+# output the obtained accuries with the best model
+svm_predictions = svm_best_model.predict(x_test)
+svm_acc = 100 * accuracy_score(y_test, svm_predictions)
+print(f"Accuracy of the best SVM model trained on (train + val) and tested on test data = {svm_acc} %\n")
+
+'''
+------------ MLP Model ------------ 
+'''
 learning_rates = [1e-2, 5e-2, 1e-3, 5e-4, 1e-4]
 alphas = [1, 1e-1, 1e-2, 1e-3]
 hidden_layer_sizes = [(8, 8), (16, 16), (32, 32), (64, 64)]
