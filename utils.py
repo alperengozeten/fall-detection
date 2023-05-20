@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 
-def plot_2d(data : np.ndarray, title='Title', xLabel='x', yLabel='y', labels=['Data']):
+
+def plot_2d(data: np.ndarray, title='Title', xLabel='x', yLabel='y', labels=['Data']):
     plt.figure()
     plt.scatter(data[:, 0], data[:, 1], s=6)
     plt.xlabel(xLabel)
@@ -11,7 +12,9 @@ def plot_2d(data : np.ndarray, title='Title', xLabel='x', yLabel='y', labels=['D
     plt.legend(labels=labels)
     plt.show()
 
-def plot_clusters(data : np.ndarray, predicted_labels : np.ndarray, nClusters, title='Title', xLabel='x', yLabel='y', labels=['Data']):
+
+def plot_clusters(data: np.ndarray, predicted_labels: np.ndarray, nClusters, title='Title', xLabel='x', yLabel='y',
+                  labels=['Data']):
     plt.figure()
     for i in range(nClusters):
         currentData = data[predicted_labels == i]
@@ -22,6 +25,7 @@ def plot_clusters(data : np.ndarray, predicted_labels : np.ndarray, nClusters, t
     plt.legend(labels=labels)
     plt.show()
 
-def min_max_scale(data : np.ndarray) -> np.ndarray:
+
+def min_max_scale(data: np.ndarray) -> np.ndarray:
     data_scaler = MinMaxScaler()
     return data_scaler.fit_transform(data)
