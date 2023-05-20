@@ -114,17 +114,16 @@ hidden_layer_sizes = [(8, 8), (16, 16), (32, 32), (64, 64)]
 solvers = ["adam", "sgd"]
 activation_functions = ["relu"]
 
-hyperparams = list(product(learning_rates, alphas, hidden_layer_sizes, solvers, activation_functions))
+hyperparams = list(product(hidden_layer_sizes, learning_rates, alphas, solvers, activation_functions))
 
 x_train, x_test, y_train, y_test = train_test_split(transformed_full_data, labels, test_size=0.30, random_state=2023)
 x_valid, x_test, y_valid, y_test = train_test_split(x_test, y_test, test_size=0.50, random_state=2023)
 
 results = []
 for size, lr, alpha, solver, activation_function in hyperparams:
-    print(f"\n\nOn the setting size={size}, lr={lr}, alpha={alpha}, solver={solver}, act_func={activation_function}")
-    model = MLPClassifier(hidden_layer_sizes=size, activation=activation_function,
-                            solver=solver, alpha=alpha, learning_rate_init=lr, max_iter=100000,
-                            random_state=42)
+    print(f"\nRunning size={size}, lr={lr}, alpha={alpha}, solver={solver}, act_func={activation_function}")
+    model = MLPClassifier(hidden_layer_sizes=size, activation=activation_function, solver=solver, alpha=alpha, learning_rate_init=lr, max_iter=100000,
+                          random_state=2023)
     model.fit(x_train, y_train)
     predictions = model.predict(x_valid)
     val_accuracy = accuracy_score(y_valid, predictions) * 100
