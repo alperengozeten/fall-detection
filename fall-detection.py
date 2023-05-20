@@ -49,10 +49,25 @@ kmeans.fit(transformed_full_data)
 
 predicted_labels = kmeans.predict(transformed_full_data)
 
+print('\n-------------------------------------')
+for k in range(2):
+    clusterLabels = labels[predicted_labels == k]
+
+    numFall = np.sum(clusterLabels)
+    numNonFall = len(clusterLabels) - numFall
+
+    isFallCluster = 1 if numFall >= numNonFall else 0
+    acc = (numFall / len(clusterLabels)) if isFallCluster == 1 else (numNonFall / len(clusterLabels))
+    
+    clusterType = 'Fall' if isFallCluster == 1 else 'Non-Fall'
+    print(f'The Cluster {k + 1} Consists Of Mostly {clusterType} Data')
+    print(f'Accuracy When Cluster {k + 1} Predicted As {clusterType}: {acc}')
+
 acc1 = accuracy_score(labels, predicted_labels)
 acc2 = accuracy_score(labels, 1- predicted_labels)
 acc = max(acc1, acc2)
-print('The Accuracy Obtained With K-Means With 2 Groups: ' + str(acc))
+print('The Overall Accuracy Obtained With 2-Means: ' + str(acc) + '\n-------------------------------------')
+
 
 plot_clusters(transformed_full_data, predicted_labels, nClusters=2, title='2-Means On Transformed Data', xLabel='Projection Onto First PC', yLabel='Projection Onto Second PC', labels=['Cluster1', 'Cluster2'])
 
