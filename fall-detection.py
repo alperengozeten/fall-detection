@@ -8,6 +8,7 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from sklearn.metrics import accuracy_score
 from sklearn.neural_network import MLPClassifier
+from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from utils import plot_2d, min_max_scale, plot_clusters
 from itertools import product
@@ -108,19 +109,68 @@ pcaNew = PCA(n_components=40)
 transformed_full_data = pcaNew.fit_transform(full_data)
 print('The total explained variance when first 40 PCs used: ' + str(np.sum(pcaNew.explained_variance_ratio_)))
 
+x_train, x_test, y_train, y_test = train_test_split(transformed_full_data, labels, test_size=0.30, random_state=2023)
+x_valid, x_test, y_valid, y_test = train_test_split(x_test, y_test, test_size=0.50, random_state=2023)
+
+c_values        = [1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2]
+kernel_types    = ["poly", "rbf", "sigmoid"]
+gamma_values    = ["scale", "auto"]
+degrees         = [1, 2, 3, 4, 5, 6]
+
+svm_hyperparams = list(product(c_values, kernel_types, gamma_values, degrees))
+
+results = []
+for c, kernel_type, gamma, degree in svm_hyperparams:
+    if kernel_type == "poly":
+        print(f"\n\nRunning c={c}, kernel={kernel_type}, gamma={gamma}, degree={degree}")
+        model = SVC(C=c, kernel=kernel_type, degree=degree, gamma=gamma, max_iter=100000, random_state=2023)
+    else:
+        degree = 'NULL'
+        print(f"\n\nOn the setting c={c}, kernel={kernel_type}, gamma={gamma}, degree={degree}")
+        model = SVC(C=c, kernel=kernel_type, gamma=gamma, max_iter=100000, random_state=2023)
+    
+    model.fit(x_train, y_train)
+    predictions = model.predict(x_valid)
+    val_accuracy = accuracy_score(y_valid, predictions) * 100
+    result = {'Regularization Parameter': c, 'Kernel Type': kernel_type, 'Degree': degree, 'Kernel Coefficient': gamma, 'Validation Accuracy (%)': val_accuracy}
+    results.append(result)
+    print(result)
+
+results_sorted = sorted(results, key=lambda x: x['Validation Accuracy (%)'], reverse=True)
+
+best_SVM_params = results_sorted[0]
+c_best = best_SVM_params["Regularization Parameter"]
+kernel_type_best = best_SVM_params['Kernel Type']
+degree_best = best_SVM_params['Degree']
+gamma_value_best = best_SVM_params['Kernel Coefficient']
+best_val_acc = best_SVM_params['Validation Accuracy (%)']
+
+x_train_valid = np.concatenate((x_train, x_valid), axis=0)
+y_train_valid = np.concatenate((y_train, y_valid), axis=0)
+
+if kernel_type_best == "poly":
+    print(f"Degree = {degree_best}")
+    best_SVM_model = SVC(C=c_best, kernel=kernel_type_best, degree=degree_best,
+                     gamma=gamma_value_best, max_iter=10000, random_state=42)
+else:
+    best_SVM_model = SVC(C=c_best, kernel=kernel_type_best, gamma=gamma_value_best, max_iter=10000, random_state=42)
+print(f"Gamma Value = {gamma_value_best}")
+best_SVM_model.fit(x_train_valid, y_train_valid)
+predictions_svm = best_SVM_model.predict(x_test)
+accuracy_svm = accuracy_score(y_test, predictions_svm) * 100
+print(f"Accuracy of the best SVM model on test data = {accuracy_svm} %\n")
+
 learning_rates = [1e-2, 5e-2, 1e-3, 5e-4, 1e-4]
 alphas = [1, 1e-1, 1e-2, 1e-3]
 hidden_layer_sizes = [(8, 8), (16, 16), (32, 32), (64, 64)]
 solvers = ["adam", "sgd"]
 activation_functions = ["relu"]
 
-hyperparams = list(product(hidden_layer_sizes, learning_rates, alphas, solvers, activation_functions))
+nn_hyperparams = list(product(hidden_layer_sizes, learning_rates, alphas, solvers, activation_functions))
 
-x_train, x_test, y_train, y_test = train_test_split(transformed_full_data, labels, test_size=0.30, random_state=2023)
-x_valid, x_test, y_valid, y_test = train_test_split(x_test, y_test, test_size=0.50, random_state=2023)
-
+'''
 results = []
-for size, lr, alpha, solver, activation_function in hyperparams:
+for size, lr, alpha, solver, activation_function in nn_hyperparams:
     print(f"\nRunning size={size}, lr={lr}, alpha={alpha}, solver={solver}, act_func={activation_function}")
     model = MLPClassifier(hidden_layer_sizes=size, activation=activation_function, solver=solver, alpha=alpha, learning_rate_init=lr, max_iter=100000,
                           random_state=2023)
@@ -137,3 +187,4 @@ for size, lr, alpha, solver, activation_function in hyperparams:
     print(row)
 
 results_sorted = sorted(results, key=lambda x: x['Validation Accuracy (%)'], reverse=True)
+'''
