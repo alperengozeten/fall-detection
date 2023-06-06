@@ -36,13 +36,13 @@ pca = PCA()
 pca.fit(full_data)
 explained_variance_ratios = pca.explained_variance_ / np.sum(pca.explained_variance_)
 
-print('Variance explained by first PC: ' + str(pca.explained_variance_[0]))
-print('Variance explained by second PC: ' + str(pca.explained_variance_[1]))
+print('Variance explained by the first PC: ' + str(pca.explained_variance_[0]))
+print('Variance explained by the second PC: ' + str(pca.explained_variance_[1]))
 
-print('Proportion of variance explained by first PC: ' + str(explained_variance_ratios[0]))
-print('Proportion of variance explained by second PC: ' + str(explained_variance_ratios[1]))
+print('The proportion of variance explained by the first PC: ' + str(explained_variance_ratios[0]))
+print('The proportion of variance explained by the second PC: ' + str(explained_variance_ratios[1]))
 
-'''
+
 # transform the data using only the first two components
 pca2 = PCA(n_components=2)
 transformed_full_data = pca2.fit_transform(full_data)
@@ -103,7 +103,6 @@ for k in range(3, 11):
         print(f'Accuracy When Cluster {k_ + 1} Predicted As {clusterType}: {acc}')
 
     print(f'Overall Accuracy When Clusters Are Predicted Based On Majority With {k}-Means: {numCorrectPreds / len(labels)}\n-------------------------------------')
-'''
 
 # transform the data using the first 40 PCs
 pcaNew = PCA(n_components=40)
@@ -232,3 +231,5 @@ mlp_best_model.fit(x_train_valid, y_train_valid)
 mlp_predictions = mlp_best_model.predict(x_test)
 mlp_acc = 100 * accuracy_score(y_test, mlp_predictions)
 print(f"Accuracy of the best MLP model trained on (train + val) and tested on test data = {mlp_acc} %\n")
+
+# print validation accuracy, as well
