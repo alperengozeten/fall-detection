@@ -29,3 +29,12 @@ def plot_clusters(data: np.ndarray, predicted_labels: np.ndarray, nClusters, tit
 def min_max_scale(data: np.ndarray) -> np.ndarray:
     data_scaler = MinMaxScaler()
     return data_scaler.fit_transform(data)
+
+def accuracy_histogram(accList, model_name):
+    # Plot the distribution of the accuracies
+    plt.figure()
+    plt.title(f'The number of models with a given validation accuracy for {model_name} model')
+    plt.xlabel('Accuracy of the model')
+    plt.ylabel('Number of models')
+    plt.hist(accList)
+    plt.show()

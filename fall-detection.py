@@ -10,7 +10,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
-from utils import plot_2d, min_max_scale, plot_clusters
+from utils import plot_2d, min_max_scale, plot_clusters, accuracy_histogram
 from itertools import product
 
 warnings.filterwarnings("ignore")
@@ -76,7 +76,7 @@ print('The Overall Accuracy Obtained With 2-Means: ' + str(acc) + '\n-----------
 
 plot_clusters(transformed_full_data, predicted_labels, nClusters=2, title='2-Means On Transformed Data', xLabel='Projection Onto First PC', yLabel='Projection Onto Second PC', labels=['Cluster1', 'Cluster2'])
 
-for k in range(3, 11):
+for k in range(3, 13):
     kmeans = KMeans(n_clusters=k, random_state=2023)
     kmeans.fit(transformed_full_data)
     predicted_labels = kmeans.predict(transformed_full_data)
@@ -117,7 +117,7 @@ x_valid, x_test, y_valid, y_test = train_test_split(x_test, y_test, test_size=0.
 ------------ SVM Model ------------ 
 '''
 # set of possible values to try out
-c_values = [1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2]
+c_values = [1e-3, 5e-3, 1e-2, 5e-2, 1e-1, 5e-1, 1e0, 5, 1e1, 5e1, 1e2]
 kernel_types = ["poly", "rbf", "sigmoid"]
 gamma_values = ["scale", "auto"]
 degrees = [1, 2, 3, 4, 5, 6]
@@ -129,7 +129,6 @@ svm_hyperparams = list(product(c_values, kernel_types, gamma_values, degrees))
 x_train_valid = np.concatenate((x_train, x_valid), axis=0)
 y_train_valid = np.concatenate((y_train, y_valid), axis=0)
 
-'''
 # try out all possible configurations and append the results
 results = []
 for c, kernel_type, gamma, degree in svm_hyperparams:
@@ -149,6 +148,8 @@ for c, kernel_type, gamma, degree in svm_hyperparams:
 
     results.append(val_accuracy)
 
+accuracy_histogram(results, 'SVM')
+
 # get the index with highest accuracy score
 results = np.asarray(results)
 svm_best_index = np.argmax(results)
@@ -166,6 +167,7 @@ svm_best_degree = svm_best_degree if svm_best_kernel == 'poly' else 'NULL'
 
 # output the best settings obtained
 print(f'\n------------------------\nThe settings of the best SVM model: c={svm_best_c}, kernel_type={svm_best_kernel}, gamma={svm_best_gamma}, degree={svm_best_degree}')
+print(f'The best validation accuracy: {svm_best_val_acc}')
 
 # create instance differently depending on the kernel type
 if svm_best_kernel == "poly":
@@ -180,7 +182,7 @@ svm_best_model.fit(x_train_valid, y_train_valid)
 # output the obtained accuries with the best model
 svm_predictions = svm_best_model.predict(x_test)
 svm_acc = 100 * accuracy_score(y_test, svm_predictions)
-print(f"Accuracy of the best SVM model trained on (train + val) and tested on test data = {svm_acc} %\n")'''
+print(f"The final accuracy of the best SVM model trained on (train + val) and tested on test data = {svm_acc} %\n")
 
 '''
 ------------ MLP Model ------------ 
@@ -188,9 +190,9 @@ print(f"Accuracy of the best SVM model trained on (train + val) and tested on te
 # set of possible values to try out
 learning_rates = [1e-2, 5e-2, 1e-3, 5e-4, 1e-4]
 alphas = [1, 1e-1, 1e-2, 1e-3, 1e-4]
-hidden_layer_sizes = [(4, 4), (8, 8), (16, 16), (32, 32), (64, 64)]
+hidden_layer_sizes = [(2,2), (4, 4), (8, 8), (16, 16), (32, 32), (64, 64)]
 solvers = ["adam", "sgd"]
-activation_functions = ["relu"]
+activation_functions = ["relu", "logistic"]
 
 # create a list of all possible configurations
 mlp_hyperparams = list(product(hidden_layer_sizes, learning_rates, alphas, solvers, activation_functions))
@@ -208,6 +210,8 @@ for size, lr, alpha, solver, activation_function in mlp_hyperparams:
 
     results.append(val_accuracy)
 
+accuracy_histogram(results, 'MLP')
+
 results = np.asarray(results)
 mlp_best_index = np.argmax(results)
 
@@ -222,6 +226,7 @@ mlp_best_val_acc = results[mlp_best_index]
 
 # output the best settings obtained
 print(f'\n------------------------\nThe settings of the best MLP model: size={mlp_best_size}, lr={mlp_best_lr}, l2_reg(alpha)={mlp_best_alpha}, solver={mlp_best_solver}, activation_function={mlp_best_activation_function}')
+print(f'The best validation accuracy: {mlp_best_val_acc}')
 
 # train the best model on train + validation dataset
 mlp_best_model = MLPClassifier(hidden_layer_sizes=mlp_best_size, activation=mlp_best_activation_function, solver=mlp_best_solver, alpha=mlp_best_alpha, learning_rate_init=mlp_best_lr, max_iter=100000, random_state=2023)
@@ -230,6 +235,6 @@ mlp_best_model.fit(x_train_valid, y_train_valid)
 # output the obtained accuries with the best model
 mlp_predictions = mlp_best_model.predict(x_test)
 mlp_acc = 100 * accuracy_score(y_test, mlp_predictions)
-print(f"Accuracy of the best MLP model trained on (train + val) and tested on test data = {mlp_acc} %\n")
+print(f"The final Accuracy of the best MLP model trained on (train + val) and tested on test data = {mlp_acc} %\n")
 
-# print validation accuracy, as well
+# print validation accuracy, as well'''
